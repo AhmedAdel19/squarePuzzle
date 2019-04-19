@@ -1,0 +1,277 @@
+import random
+import math
+from copy import deepcopy
+
+GState = input("Enter Goal State -->>")
+
+class squarePuzzle:
+
+    def __init__(self):
+        self.heuristic = 0
+        self.depth = 0
+        self.parent = None
+        self.matrix = []
+        for i in range(4):
+            self.matrix.append(GState[i][:])
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+    def build_blank_direction(self): #brg3 l possible states l ynf3 a3mlha shuffle
+
+        row, col = self.find_blank(0)
+        free = []
+        if row > 0:
+            free.append((row - 1, col))
+        if row < 3:
+            free.append((row + 1, col))
+        if col > 0:
+            free.append((row, col - 1))
+        if col < 3:
+            free.append((row, col + 1))
+
+        return free
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+    def get_possible_stste(self):#b3ml swap m3 l avaliable moves 3l4an agep kol l states bta3t state l na feha
+        free = self.build_blank_direction()
+        zero = self.find_blank(0)
+
+        def swap_with_blank(a, b):
+            p = squarePuzzle()
+            p.matrix = deepcopy(self.matrix)
+            p.Pswap(a,b)
+            p.depth = self.depth + 1
+            p.parent = self
+            return p
+        return map(lambda pair: swap_with_blank(zero, pair), free)#ba5od kol mara tuble mn free we a3mlo swap m3 mkan zero
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def get_path(self, path): #brg3 l path b3d lma awsl ll gaol state
+        if self.parent == None:
+            return path
+        else:
+            path.append(self)
+            return self.parent.get_path(path)
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def check_and_rteurn_index(state, pq):
+        if state in pq:
+            return pq.index(state)
+        else:
+            return 0
+
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    def best_first_search(self, h): #best first search function
+
+        def check_if_goal(squarePuzzle):
+            return squarePuzzle.matrix == GState
+        p=squarePuzzle
+
+        openll = [self]#awl mra hykon feha
+        #print(openll[0].matrix)
+        closedl = []
+        move_count = 0
+        while len(openll) > 0:
+            x = openll.pop(0)#low m4 fadya h3ml pop l awel element
+            move_count += 1  #kol state h3mlha pop hzawed l move_count 3l4an a3rf 3amlt explore l kam state fe l a5er
+            if (check_if_goal(x)):
+                if len(closedl) > 0:
+                    return x.get_path([]), move_count#low hya l goal hrg3 l path we 3dad l states l at3mlhom explore
+                else:
+                    return [x]
+
+            succ = x.get_possible_stste()#bgep l possible moves ll state l na feha
+            idx_open = idx_closed = 0
+            for move in succ:
+                idx_open = p.check_and_rteurn_index(move, openll)#bshoof hya f l open wla l2
+                idx_closed = p.check_and_rteurn_index(move, closedl)#bshoof hya f l closed wla l2
+                hval = h(move)#b7sb l heuristic bta3ha
+                fval = hval + move.depth#b7sb l f(n) bta3ha ->f(n)=h(n)+g(n)
+
+                if idx_closed == 0 and idx_open == 0:#low m4 mawgoda wla fe l open wla fe l closed
+                    move.heuristic = hval#ha assign leha l heuristic
+                    openll.append(move)#h3mlha append fe l open
+                elif idx_open > 0:#ama lw mawgoda fe l open
+                    copy = openll[idx_open]#ha5od mnha copy
+                    if fval < copy.heuristic + copy.depth:#lw l f(n) bta3tha a2l mn l 2adema elly fe l copy h3ml swap
+                        copy.heuristic = hval#ha assign ll copy l heuristic l a2l bt3ha
+                        copy.parent = move.parent#ha assign ll copy l parent bt3ha
+                        copy.depth = move.depth#ha assign ll copy l depth bt3ha
+                elif idx_closed > 0:#lw mowgoda fe l closed
+                    copy = closedl[idx_closed]#ha5od copy mnha
+                    if fval < copy.heuristic + copy.depth:#lw l f(n) a2l mn l copy
+                        move.heuristic = hval#ha assighn ll copy l heuristic l a2l
+                        closedl.remove(copy)#h4elha mn l closed 5ales
+                        openll.append(move)#h3mlha append fe l open 3l4an a3mlha explore tany
+
+            closedl.append(x)#kol state b3mlha explore [pop mn l open] h3mlha append fe l closed
+            openll = sorted(openll, key=lambda p: p.heuristic + p.depth)
+        # h3ml sort ll open b l f(n) l a2l 3l4an tb2a k2nha priority queue 3l4an lma y3ml explore fe kol mara ya5od l state
+        #l f(n) bta3tha a2l
+        return []
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+    def shuffle(self, step_count): # bt3ml shuffle
+        for i in range(step_count):
+            row, col = self.find_blank(0)
+            free = self.build_blank_direction()
+            target = random.choice(free)
+            self.Pswap((row, col), target)
+            row, col = target
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+    def find_blank(self, value):# arg3 l index Of blank
+        for row in range(4):
+            for col in range(4):
+                if self.matrix[row][col] == value:
+                    return row, col
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+    def get_val(self, row, col):# ptrg3 value bta3 index mo3yn
+        return self.matrix[row][col]
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def Pswap(self,pos_a, pos_b): #bt3ml swap brdo
+        temp = self.matrix[pos_a[0]][pos_a[1]]
+        self.matrix[pos_a[0]][pos_a[1]] = self.matrix[pos_b[0]][pos_b[1]]
+        self.matrix[pos_b[0]][pos_b[1]] = temp
+
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+    def manhattan_dis(self,squarePuzzle): #manhattan (second heuristic function) to used in best search function
+        distance=0
+        for i in range(4):
+            for j in range(4):
+                index_i , index_j=i ,j
+                for x in range(4):
+                    for y in range(4):
+                        index_x, index_y = x, y
+                        if squarePuzzle.get_val(i, j) == GState[x][y]:
+                            distance += abs(index_i - index_x) + abs(index_j - index_y)
+        return distance
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def mis_placed(self,squarePuzzle):  # missplaced (first heuristic function) to use in best search function
+        num = 1
+        mis_p = 0
+        for row in range(4):
+            for col in range(4):
+                if (squarePuzzle.get_val(row, col) != num):
+                    mis_p += 1
+                num += 1
+        return mis_p
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def mis_placed2(self,squarePuzzle):
+        mis=0
+        for i in range(4):
+            for j in range(4):
+                if(squarePuzzle.get_val(i, j)!=GState[i][j]):
+                    mis+=1
+        return mis
+
+
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def misPlace(self,State): # first heuristic function to use outside best first search
+        num = 1
+        mis_place = 0
+        for i in range(len(State)):
+            for j in range(len(State)):
+                if (State[i][j] != num):
+                    mis_place +=1
+                num +=1
+        return mis_place
+
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
+    def check_if_goal(self,state,goal): # check if goal state or not to test outside best search function
+        for x in range(len(state)):
+            for y in range(len(state)):
+                if state[x][y]!=goal[x][y]:
+                    return false
+        return true
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+"""def manhattan_distance(squarePuzzle): #to used in best search function
+    t = 0
+    for row in range(4):
+        for col in range(4):
+            val = squarePuzzle.get_val(row, col) - 1##(3)
+            target_col = val % 4
+            target_row = val / 4
+
+                # account for 0 as blank
+            if target_row < 0:
+                target_row = 3
+
+            t += abs(target_row - row) + abs(target_col - col)
+
+        return t """
+#---------------------------------------------------------------------
+#---------------------------------------------------------------------
+
+#----------main function------------------#
+
+def main():
+
+    p = squarePuzzle()
+    p.shuffle(15)
+    print("--------Initial State--------")
+
+    for i in p.matrix:
+        print i
+    print"\n"
+    print "misplaced value = ", p.mis_placed2(p)
+    #print(p.misPlace((p.matrix)))
+    print "manhattan value = " ,p.manhattan_dis(p)
+    print("------------------------------")
+
+    print("\n")
+
+
+    #print(p._get_legal_moves())
+
+
+    #path, count = p.best_first_search(manhattan_distance)
+    path, count = p.best_first_search(p.mis_placed2)
+    path.reverse()
+    for i in path:
+        for row  in i.matrix:
+            print row
+        print "\n"
+        #print i.matrix
+    print "Solved with Misplaced squares  exploring", count, "states"
+    #path, count = p.best_first_search(manhattan_dis)
+    #print "Solved with Manhattan222 distance exploring", count, "states"
+    path, count = p.best_first_search(p.manhattan_dis)
+    print "Solved with Manhattan distance exploring", count, "states"
+
+if __name__ == "__main__":
+    main()

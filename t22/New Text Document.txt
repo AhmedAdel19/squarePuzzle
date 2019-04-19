@@ -1,0 +1,3 @@
+http://www.openbookproject.net/py4fun/tiles/tiles.html
+
+http://www.cs.cornell.edu/courses/cs4700/2011fa/lectures/03_InformedSearch.pdf
